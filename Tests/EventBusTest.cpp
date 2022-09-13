@@ -10,6 +10,8 @@ struct TestEventWithData
 	int data;
 };
 
+auto& bus = event_bus::EventBus::getInstance();
+
 bool onTestEventFreeFunctionCalled{false};
 
 void onTestEvent(TestEvent ev)
@@ -21,10 +23,27 @@ void onTestEvent(TestEvent ev)
 TEST(EventBus, canRegisterDeregisterEvent)
 {
 	auto onTestEvent = [](TestEvent ev) {};
-    event_bus::EventBus::getInstance().registerEvent<TestEvent>(onTestEvent);
-	event_bus::EventBus::getInstance().removeEvent<TestEvent>();
+	
+
+    bus.registerEvent<TestEvent>(onTestEvent);
+	bus.removeEvent<TestEvent>();
 }
 
+TEST(EventBus,cannotHandleAfterDeregister)
+{
+	bool isHandled{false};
+	
+	auto handler = [&isHandled](TestEvent ev){
+		isHandled = true;
+	};
+
+	bus.registerEvent<TestEvent>(handler);
+	bus.removeEvent<TestEvent>();
+
+	bus.fireEvent<TestEvent>(TestEvent{});
+
+	EXPECT_FALSE(isHandled);
+}
 
 TEST(EventBus, canUseLambdaAsEventHandler)
 {
@@ -32,22 +51,22 @@ TEST(EventBus, canUseLambdaAsEventHandler)
     auto onTestEvent = [&isHandled](TestEvent ev) {
         isHandled = true;
     };
-    event_bus::EventBus::getInstance().registerEvent<TestEvent>(onTestEvent);
-    event_bus::EventBus::getInstance().fireEvent(TestEvent{});
+    bus.registerEvent<TestEvent>(onTestEvent);
+    bus.fireEvent(TestEvent{});
 
     EXPECT_TRUE(isHandled);
 	
-	event_bus::EventBus::getInstance().removeEvent<TestEvent>();
+	bus.removeEvent<TestEvent>();
 }
 
 TEST(EventBus, canUseFreeFunctionAsEventHandler)
 {
-    event_bus::EventBus::getInstance().registerEvent<TestEvent>(onTestEvent);
-    event_bus::EventBus::getInstance().fireEvent(TestEvent{});
+    bus.registerEvent<TestEvent>(onTestEvent);
+    bus.fireEvent(TestEvent{});
 
     EXPECT_TRUE(onTestEventFreeFunctionCalled);
 
-	event_bus::EventBus::getInstance().removeEvent<TestEvent>();
+	bus.removeEvent<TestEvent>();
 }
 
 TEST(EventBus, canUseMemberFunctionAsEventHandler)
@@ -63,12 +82,12 @@ TEST(EventBus, canUseMemberFunctionAsEventHandler)
     };
     TestEventHandler handler;
 
-    event_bus::EventBus::getInstance().registerEvent<TestEvent>(std::bind(&TestEventHandler::onTestEvent, &handler, std::placeholders::_1));
-    event_bus::EventBus::getInstance().fireEvent(TestEvent{});
+    bus.registerEvent<TestEvent>(std::bind(&TestEventHandler::onTestEvent, &handler, std::placeholders::_1));
+    bus.fireEvent(TestEvent{});
 
     EXPECT_TRUE(handler.isHandlerCalled);
 
-	event_bus::EventBus::getInstance().removeEvent<TestEvent>();
+	bus.removeEvent<TestEvent>();
 
 }
 
@@ -81,18 +100,18 @@ TEST(EventBus, doesNotMissAnyEventHandling)
 		counter++;
 	};
 
-	event_bus::EventBus::getInstance().registerEvent<TestEvent>(testEventHandler);
+	bus.registerEvent<TestEvent>(testEventHandler);
 	
 	// Fire 5 times
-	event_bus::EventBus::getInstance().fireEvent(TestEvent{});
-	event_bus::EventBus::getInstance().fireEvent(TestEvent{});
-	event_bus::EventBus::getInstance().fireEvent(TestEvent{});
-	event_bus::EventBus::getInstance().fireEvent(TestEvent{});
-	event_bus::EventBus::getInstance().fireEvent(TestEvent{});
+	bus.fireEvent(TestEvent{});
+	bus.fireEvent(TestEvent{});
+	bus.fireEvent(TestEvent{});
+	bus.fireEvent(TestEvent{});
+	bus.fireEvent(TestEvent{});
 
 	EXPECT_EQ(counter,5);
 
-	event_bus::EventBus::getInstance().removeEvent<TestEvent>();
+	bus.removeEvent<TestEvent>();
 }
 
 TEST(EventBus, canEventStoreState)
@@ -103,15 +122,15 @@ TEST(EventBus, canEventStoreState)
 		valueFromHandler = ev.data;
 	};
 
-	event_bus::EventBus::getInstance().registerEvent<TestEventWithData>(onTestEventWithData);
+	bus.registerEvent<TestEventWithData>(onTestEventWithData);
 
 	EXPECT_EQ(valueFromHandler,0);
 
-	event_bus::EventBus::getInstance().fireEvent(TestEventWithData{45});
+	bus.fireEvent(TestEventWithData{45});
 
 	EXPECT_EQ(valueFromHandler,45);
 
-	event_bus::EventBus::getInstance().removeEvent<TestEvent>();
+	bus.removeEvent<TestEvent>();
 }
 
 TEST(EventBus, HandlerWithMultipleArgs)
@@ -125,13 +144,13 @@ TEST(EventBus, HandlerWithMultipleArgs)
 		boolValueFromHandler = boolean_arg;
 	};
 
-	event_bus::EventBus::getInstance().registerEvent<TestEvent>(handlerWithArgs,12,true);
+	bus.registerEvent<TestEvent>(handlerWithArgs,12,true);
 
-	event_bus::EventBus::getInstance().fireEvent<TestEvent>(TestEvent{});
+	bus.fireEvent<TestEvent>(TestEvent{});
 
 	EXPECT_TRUE(boolValueFromHandler);
 	EXPECT_EQ(intValueFromHandler,12);
 
-	event_bus::EventBus::getInstance().removeEvent<TestEvent>();
+	bus.removeEvent<TestEvent>();
 
 }
