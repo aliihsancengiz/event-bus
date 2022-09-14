@@ -1,4 +1,4 @@
-#include "EventBus.hpp"
+#include "EventBus/EventBus.hpp"
 
 #include <iostream>
 

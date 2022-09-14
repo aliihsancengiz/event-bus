@@ -1,23 +1,32 @@
 cmake_minimum_required(VERSION 3.16)
-project("Event Bus" VERSION 0.0.8)
 
-set(TARGET "eventbuspoc")
+set(PROJECT_VERSION 1.0.0)
+set(TARGET_NAME "Event Bus")
+
+project(${TARGET_NAME}
+        VERSION ${PROJECT_VERSION}
+        LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_subdirectory(Tests)
-
-add_executable(${TARGET} main.cpp)
-
-target_include_directories(${TARGET}
-    PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/EventBus
+set(EVENTBUS_LIB_INC
+	include/EventBus/EventBus.hpp
 )
 
-target_link_libraries(${TARGET}
-    PUBLIC
-    PRIVATE
-)
+if (BUILD_TEST)
+	add_subdirectory(tests)
+endif(BUILD_TEST)
+
+if (BUILD_EXAMPLE)
+	add_subdirectory(example)
+endif(BUILD_EXAMPLE)
+
+include(GNUInstallDirs)
+
+foreach ( file ${EVENTBUS_LIB_INC} )
+    get_filename_component( dir ${file} DIRECTORY )
+    install( FILES ${file} DESTINATION "${CMAKE_INSTALL_PREFIX}/${dir}")
+endforeach()
+
