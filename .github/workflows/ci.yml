@@ -22,11 +22,11 @@ jobs:
 
     - name: Build
       run: |
-        ./scrpits/build.sh -t
+        ./scripts/build.sh -t
 
     - name: Install
       run: |
-        ./scrpits/install.sh
+        ./scripts/install.sh
 
     - name: Test
       run: |
